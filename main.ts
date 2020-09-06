@@ -1,6 +1,6 @@
-import * as path from "https://deno.land/std/path/mod.ts";
-
 import { parse } from "https://deno.land/std/flags/mod.ts";
+
+import { meType, EventPostBody } from "./dtEvent.d.ts";
 
 /* 
 {
@@ -27,61 +27,102 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 }
 */
 
-// Sends the event to DT using fetch()
-async function sendEvent() {
-  const req = new Request("https://lzq49041.live.dynatrace.com/api/v1/events", {
-    method: "GET",
-    headers: {
-      Authorization: "Api-Token tlWSX9m6SZSe1duk0TNxA",
-    },
-  });
-
-  const res = await fetch(req);
-  const data = await res.json();
+function validatedtenv(env: string, token: string): boolean {
+  return true;
 }
 
-// Fetch the ENVVARS and then use them
 async function main() {
-  const {
-    type,
-    name,
-    not,
-    help,
-    _: [dir = "."],
-  } = parse(Deno.args);
+  const { entityID, entityType, tagrule, help } = parse(Deno.args);
+  if (help) {
+    console.log(
+      "Usage: \n\tdeno run --allow-env --allow-net ./main.ts [--tagrule <Tag Filter>][--entityID <Monitored Entity>]"
+    );
+    return;
+  }
 
-  console.log({
-    type,
-    name,
-    not,
-    help,
-  });
+  // Consume Plugin settings
 
   const dtenv = Deno.env.get("PLUGIN_DYNATRACE_ENVIRONMENT");
   const dttoken = Deno.env.get("PLUGIN_DYNATRACE_API_TOKEN");
-  if (!dtenv || !dttoken) {
+  if (!dtenv || !dttoken)
     throw Error("Dynatrace Environment AND Token are required");
-  }
 
-  const dtTagRule = Deno.env.get("PLUGIN_DYNATRACE_TAG_RULE");
-  const dtEntity = Deno.env.get("PLUGIN_DYNATRACE_ENTITY");
-  if (!dtTagRule && !dtEntity) {
+  const dtTagRule = tagrule || Deno.env.get("PLUGIN_DYNATRACE_TAG_RULE");
+  const dtEntityType =
+    entityType || Deno.env.get("PLUGIN_DYNATRACE_ENTITY_TYPE");
+  if (!dtTagRule && !dtEntityType)
     throw Error(
-      "This plugin requires some way to tie a Drone event to a Dynatrace Monitoring Entity"
+      "This plugin requires a tag and entity type to tie a Drone event to a Dynatrace Entity"
     );
-  }
 
-  const commitAuthor = Deno.env.get("DRONE_COMMIT_AUTHOR")
-    ? Deno.env.get("DRONE_COMMIT_AUTHOR")
-    : "Drone CI";
-  const commitSha = Deno.env.get("DRONE_COMMIT_SHA")
-    ? Deno.env.get("DRONE_COMMIT_SHA")
-    : "No Text In Revision";
-  const commitMessage = Deno.env.get("DRONE_COMMIT_MESSAGE")
-    ? Deno.env.get("DRONE_COMMIT_MESSAGE")
-    : "No Text In Changelog";
+  // Test that we can reach the provided dt env
+  if (!validatedtenv(dtenv, dttoken))
+    throw new Error(`Unable to reach ${dtenv}`);
+
+  // Consume Drone config
+
+  const commitAuthor = Deno.env.get("DRONE_COMMIT_AUTHOR") ?? "Drone CI";
+  const commitSha = Deno.env.get("DRONE_COMMIT_SHA") ?? "No Text In Revision";
+  const commitMessage =
+    Deno.env.get("DRONE_COMMIT_MESSAGE") ?? "No Text In Changelog";
+  const droneProject = Deno.env.get("DRONE_REPO_NAME");
+  const droneRepoBranch = Deno.env.get("DRONE_REPO_BRANCH");
+  const droneRepoLink = Deno.env.get("DRONE_REPO_LINK");
+
+  const droneBuildLink = Deno.env.get("DRONE_BUILD_LINK");
+  const droneBuildEvent = Deno.env.get("DRONE_BUILD_EVENT");
+  const droneBuildNumber = Deno.env.get("DRONE_BUILD_NUMBER");
+
+  // Setup API request
+
+  let body: EventPostBody = {
+    eventType: "CUSTOM_DEPLOYMENT",
+    source: "Drone CI",
+    deploymentProject: droneProject,
+    attachRules: {
+      tagRule: [
+        {
+          meTypes: [dtEntityType],
+          tags: [
+            {
+              context: "CONTEXTLESS",
+              key: tagrule,
+            },
+          ],
+        },
+      ],
+    },
+    ciBackLink: droneBuildLink,
+    deploymentName: `${droneBuildEvent} event - build #${droneBuildNumber}`,
+    deploymentVersion: `${commitSha} - Build ${droneBuildNumber}`,
+  };
+
+  console.log(body);
+
+  const requestOptions: RequestInit = {
+    method: "POST",
+    headers: {
+      Authorization: "Api-Token tlWSX9m6SZSe1duk0TNxA",
+    },
+    body: JSON.stringify(body),
+  };
+
+  // Send API request
+
+  // const req = new Request(
+  //   "https://lzq49041.live.dynatrace.com/api/v1/events",
+  //   requestOptions
+  // );
+
+  // const res = await fetch(req);
+  // const data = await res.json();
+  // console.log(data);
 }
 
 if (import.meta.main) {
-  await main();
+  try {
+    await main();
+  } catch (e) {
+    console.error(e.toString());
+  }
 }
