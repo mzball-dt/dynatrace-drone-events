@@ -1,5 +1,7 @@
 # Dynatrace Drone Events
 
+[![Build Status](https://drone.sablecliff.com/api/badges/mzball-dt/dynatrace-drone-events/status.svg)](https://drone.sablecliff.com/mzball-dt/dynatrace-drone-events)
+
 A Drone CI Plugin for pushing deployment events to tagged entities for greater visibility, automation and problem investigation.
 
 This repo is consumed by a local instance of Drone and the resulting docker container pushed to [cavejay/dynatrace-drone-events](https://hub.docker.com/repository/docker/cavejay/dynatrace-drone-events/general)
