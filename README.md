@@ -27,6 +27,3 @@ Tie build events from Drone CI to your monitored entities in Dynatrace.
 3. Deno run --allow-net --allow-env ./main.ts
 4. Deno run --allow-read ./tests.ts
 
-https://github.com/drone/drone-plugin-starter
-
-https://www.dynatrace.com/support/help/dynatrace-api/environment-api/events/post-event/#events-post-parameter-enum-mngdhmecdptenoh832feoq
