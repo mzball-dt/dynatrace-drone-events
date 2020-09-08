@@ -2,31 +2,6 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 
 import { meType, EventPostBody } from "./dtEvent.d.ts";
 
-/* 
-{
-  "eventType": "CUSTOM_DEPLOYMENT",
-  "timeoutMinutes": 0,
-  "attachRules": {
-    "tagRule": [
-      {
-        "meTypes": [
-          "HOST"
-        ],
-        "tags": [
-          {
-            "context": "CONTEXTLESS",
-            "key": "tagname"
-          }
-        ]
-      }
-    ]
-  },
-  "source": "OpsControl",
-"deploymentName": "new thing test",
-"deploymentVersion": "1.2.3 alpha"
-}
-*/
-
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
@@ -102,7 +77,7 @@ async function main() {
   const requestOptions: RequestInit = {
     method: "POST",
     headers: {
-      Authorization: "Api-Token tlWSX9m6SZSe1duk0TNxA",
+      Authorization: `Api-Token ${dttoken}`,
     },
     body: JSON.stringify(body),
   };
