@@ -85,7 +85,7 @@ async function main() {
   // Send API request
 
   // const req = new Request(
-  //   "https://lzq49041.live.dynatrace.com/api/v1/events",
+  //   `${dtenv}`,
   //   requestOptions
   // );
 

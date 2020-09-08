@@ -1,0 +1,39 @@
+kind: pipeline
+type: docker
+name: oncecomplete
+
+steps:
+  - name: docker w/ publish
+    image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: docker_repo_token
+    settings:
+      username: cavejay
+      repo: cavejay/dynatrace-drone-events
+      tags: latest
+      auto_tag: true
+
+  - name: test plugin
+    image: cavejay/dynatrace-drone-events
+    settings:
+      dynatrace_environment:
+        from_secret: dtenv
+      dynatrace_api_token:
+        from_secret: dttoken
+      dynatrace_entity_type: HOST
+      dynatrace_tag_rule: sablevm
+
+  - name: Notify
+    image: appleboy/drone-discord
+    settings:
+      webhook_id:
+        from_secret: discord_webhook_id
+      webhook_token:
+        from_secret: discord_webhook_token
+      message: >
+        {{#success build.status}}
+          dynatrace-drone-events build {{build.number}} succeeded. Yay.
+        {{else}}
+          :x: QS Deploy {{build.number}} failed. Fix me please.
+        {{/success}}
