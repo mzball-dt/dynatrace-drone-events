@@ -5,12 +5,11 @@ name: default
 steps:
   - name: docker w/ publish
     image: plugins/docker
-    environment:
+    settings:
       username:
         from_secret: docker_user
       password:
         from_secret: docker_pw
-    settings:
       repo: cavejay/dynatrace-drone-events
       tags: latest
       auto_tag: true
