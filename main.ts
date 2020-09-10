@@ -76,12 +76,19 @@ async function main() {
 
   console.log(inspect(body));
 
+  let stringBody: string;
+  try {
+    stringBody = JSON.stringify(body);
+  } catch (e) {
+    throw new Error(`Body was invalid JSON: ${e}`);
+  }
+
   const requestOptions: RequestInit = {
     method: "POST",
     headers: {
       Authorization: `Api-Token ${dttoken}`,
     },
-    body: JSON.stringify(body),
+    body: stringBody,
   };
 
   // Send API request
