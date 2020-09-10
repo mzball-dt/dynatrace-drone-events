@@ -23,7 +23,7 @@ steps:
       dynatrace_api_token:
         from_secret: dttoken
       dynatrace_entity_type: HOST
-      dynatrace_tag_rule: sablevm
+      dynatrace_tag_rule: SableVM
 
   - name: Notify
     image: appleboy/drone-discord

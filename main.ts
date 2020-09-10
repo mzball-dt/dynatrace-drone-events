@@ -2,8 +2,6 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 
 import { meType, EventPostBody } from "./dtEvent.d.ts";
 
-import { inspect } from "https://deno.land/std@0.67.0/node/util.ts";
-
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
@@ -63,18 +61,17 @@ async function main() {
           tags: [
             {
               context: "CONTEXTLESS",
-              key: tagrule,
+              key: dtTagRule,
             },
           ],
         },
       ],
     },
-    ciBackLink: droneBuildLink,
-    deploymentName: `${droneBuildEvent} event - build #${droneBuildNumber}`,
+    deploymentName: `${droneBuildEvent} event - Build #${droneBuildNumber}`,
     deploymentVersion: `${commitSha} - Build ${droneBuildNumber}`,
   };
 
-  console.log(inspect(body));
+  if (droneBuildLink) body.ciBackLink = droneBuildLink;
 
   let stringBody: string;
   try {
@@ -87,13 +84,15 @@ async function main() {
     method: "POST",
     headers: {
       Authorization: `Api-Token ${dttoken}`,
+      "Content-Type": "application/json",
+      accept: "application/json",
     },
     body: stringBody,
   };
 
   // Send API request
 
-  const req = new Request(`${dtenv}`, requestOptions);
+  const req = new Request(`${dtenv}/api/v1/events`, requestOptions);
 
   const res = await fetch(req);
   const data = await res.json();
@@ -101,9 +100,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  try {
-    await main();
-  } catch (e) {
-    console.error(e.toString());
-  }
+  await main();
 }
