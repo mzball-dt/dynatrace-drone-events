@@ -2,6 +2,8 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 
 import { meType, EventPostBody } from "./dtEvent.d.ts";
 
+import { inspect } from "https://deno.land/std@0.67.0/node/util.ts";
+
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
@@ -72,7 +74,7 @@ async function main() {
     deploymentVersion: `${commitSha} - Build ${droneBuildNumber}`,
   };
 
-  console.log(body);
+  console.log(inspect(body));
 
   const requestOptions: RequestInit = {
     method: "POST",
@@ -84,14 +86,11 @@ async function main() {
 
   // Send API request
 
-  // const req = new Request(
-  //   `${dtenv}`,
-  //   requestOptions
-  // );
+  const req = new Request(`${dtenv}`, requestOptions);
 
-  // const res = await fetch(req);
-  // const data = await res.json();
-  // console.log(data);
+  const res = await fetch(req);
+  const data = await res.json();
+  console.log(data);
 }
 
 if (import.meta.main) {
