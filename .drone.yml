@@ -1,18 +1,20 @@
 kind: pipeline
 type: docker
-name: oncecomplete
+name: default
 
 steps:
   - name: docker w/ publish
     image: plugins/docker
     environment:
-      TOKEN:
-        from_secret: docker_repo_token
+      username:
+        from_secret: docker_user
+      password:
+        from_secret: docker_pw
     settings:
-      username: cavejay
       repo: cavejay/dynatrace-drone-events
       tags: latest
       auto_tag: true
+      dockerfile: ./dockerfile
 
   - name: test plugin
     image: cavejay/dynatrace-drone-events
