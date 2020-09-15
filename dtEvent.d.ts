@@ -118,7 +118,7 @@ type tagDescription = {
   key: string;
 };
 
-type tagRuleInstance = {
+type TagRuleInstance = {
   meTypes: Array<meType>;
   tags: Array<tagDescription>;
 };
@@ -127,7 +127,7 @@ type EventPostBody = {
   eventType: eventType;
   timeoutMinutes?: number;
   attachRules: {
-    tagRule: Array<tagRuleInstance>;
+    tagRule: Array<TagRuleInstance>;
   };
   source: string;
   deploymentName?: string;
@@ -138,4 +138,4 @@ type EventPostBody = {
   customProperties?: object;
 };
 
-export { meType, tagContext, EventPostBody };
+export { meType, tagContext, EventPostBody, TagRuleInstance, tagDescription };

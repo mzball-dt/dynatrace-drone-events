@@ -1,18 +1,57 @@
 import { parse } from "https://deno.land/std/flags/mod.ts";
 
-import { meType, EventPostBody } from "./dtEvent.d.ts";
+import {
+  meType,
+  EventPostBody,
+  TagRuleInstance,
+  tagDescription,
+  tagContext,
+} from "./dtEvent.d.ts";
 
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
 
+function usage(): string {
+  return "Usage: \n\tdeno run --allow-env --allow-net ./main.ts [--tagrule <Tag Filter>][--entityID <Monitored Entity>]";
+}
+
+function parseTagRules(input: string): Array<TagRuleInstance> | any {
+  const tagRules = input.split(",");
+
+  let output: Array<TagRuleInstance> = [];
+
+  for (const iterator of tagRules) {
+    const mtype: meType = <meType>iterator.split("=")[0];
+    const listedTags: Array<tagDescription> = iterator
+      .split("=")[1]
+      .split("&&")
+      .map((_) => {
+        const contextortag: Array<string> = _.split(":");
+        return {
+          context:
+            contextortag.length > 1
+              ? <tagContext>contextortag[0]
+              : <tagContext>"CONTEXTLESS",
+          key: contextortag[contextortag.length - 1],
+        };
+      });
+
+    const ruleinst: TagRuleInstance = {
+      meTypes: [mtype],
+      tags: listedTags,
+    };
+
+    output.push(ruleinst);
+  }
+
+  return output;
+}
+
 async function main() {
   const { entityID, entityType, tagrule, help } = parse(Deno.args);
   if (help) {
-    console.log(
-      "Usage: \n\tdeno run --allow-env --allow-net ./main.ts [--tagrule <Tag Filter>][--entityID <Monitored Entity>]"
-    );
-    return;
+    return console.log(usage());
   }
 
   // Consume Plugin settings
@@ -22,10 +61,8 @@ async function main() {
   if (!dtenv || !dttoken)
     throw Error("Dynatrace Environment AND Token are required");
 
-  const dtTagRule = tagrule || Deno.env.get("PLUGIN_DYNATRACE_TAG_RULE");
-  const dtEntityType =
-    entityType || Deno.env.get("PLUGIN_DYNATRACE_ENTITY_TYPE");
-  if (!dtTagRule && !dtEntityType)
+  const dtTagRules = tagrule || Deno.env.get("PLUGIN_TAGRULES");
+  if (!dtTagRules)
     throw Error(
       "This plugin requires a tag and entity type to tie a Drone event to a Dynatrace Entity"
     );
@@ -49,23 +86,14 @@ async function main() {
   const droneBuildNumber = Deno.env.get("DRONE_BUILD_NUMBER");
 
   // Setup API request
+  const tagRules = parseTagRules(dtTagRules);
 
   let body: EventPostBody = {
     eventType: "CUSTOM_DEPLOYMENT",
     source: "Drone CI",
     deploymentProject: droneProject,
     attachRules: {
-      tagRule: [
-        {
-          meTypes: [dtEntityType],
-          tags: [
-            {
-              context: "CONTEXTLESS",
-              key: dtTagRule,
-            },
-          ],
-        },
-      ],
+      tagRule: tagRules,
     },
     deploymentName: `${droneBuildEvent} event - Build #${droneBuildNumber}`,
     deploymentVersion: `${commitSha} - Build ${droneBuildNumber}`,
@@ -102,3 +130,5 @@ async function main() {
 if (import.meta.main) {
   await main();
 }
+
+export { parseTagRules };

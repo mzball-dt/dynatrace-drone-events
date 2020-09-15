@@ -22,8 +22,9 @@ steps:
         from_secret: dtenv
       dynatrace_api_token:
         from_secret: dttoken
-      dynatrace_entity_type: HOST
-      dynatrace_tag_rule: SableVM
+      tagrules:
+        - HOST=CONTEXTLESS:SableVM
+        - HOST=SableVM
 
   - name: Notify
     image: appleboy/drone-discord
@@ -36,5 +37,5 @@ steps:
         {{#success build.status}}
           dynatrace-drone-events build {{build.number}} succeeded. Yay.
         {{else}}
-          :x: QS Deploy {{build.number}} failed. Fix me please.
+          dynatrace-drone-events build {{build.number}} failed. Fix me please.
         {{/success}}
