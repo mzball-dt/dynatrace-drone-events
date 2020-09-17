@@ -8,6 +8,20 @@ import {
   tagContext,
 } from "./dtEvent.d.ts";
 
+import {
+  meType as meTypeStrings,
+  tagContext as tagContextStrings,
+} from "./validStrings.ts";
+
+class TagRuleParsingError extends Error {
+  constructor(message?: string) {
+    super(message);
+    // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+    Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+    this.name = TagRuleParsingError.name; // stack traces display correctly now
+  }
+}
+
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
@@ -17,31 +31,58 @@ function usage(): string {
 }
 
 function parseTagRules(input: string): Array<TagRuleInstance> | any {
-  const tagRules = input.split(",");
+  // Tags are provided in comma separated arrays
+  const tagRules: Array<string> = input.split(",");
 
   let output: Array<TagRuleInstance> = [];
-
   for (const iterator of tagRules) {
-    const mtype: meType = <meType>iterator.split("=")[0];
-    const listedTags: Array<tagDescription> = iterator
-      .split("=")[1]
+    // if this element of the input array doesn't have at least an input side error
+    if (!iterator.match(/.+=.+/))
+      throw new TagRuleParsingError(
+        `Tag Rule parsing problem - component was found to be an empty string in '${iterator}'.  Total tagRule string is: '${input}'`
+      );
+
+    // pull out the meType of the tagging rule and ensure it's valid
+    const entityTypeTagNamePairs = iterator.split("=");
+    const mtype: meType = entityTypeTagNamePairs[0] as meType;
+    if (!Object.values(meTypeStrings).find((x) => x === mtype)) {
+      throw new TypeError(`'${mtype} is not a valid meType'`);
+    }
+
+    // pull out the tag and context elements from the rhs of the k/v pair
+    const listedTags: Array<tagDescription> = entityTypeTagNamePairs[1]
       .split("&&")
       .map((_) => {
+        // If our context:tag value is empty throw an error
+        if (_ == "")
+          throw new TagRuleParsingError(
+            `Tag Rule parsing problem - component was found to be an empty string in '${iterator}'.  Total tagRule string is: '${input}'`
+          );
+
+        // Pull apart the context and tag, checking the context for known good values
         const contextortag: Array<string> = _.split(":");
+        const intendedContext =
+          contextortag.length > 1
+            ? (contextortag[0] as tagContext)
+            : ("CONTEXTLESS" as tagContext);
+        if (
+          !Object.values(tagContextStrings).find((x) => x === intendedContext)
+        ) {
+          throw new TypeError(`'${intendedContext} is not a valid tagContext'`);
+        }
+
+        // Return the object that represents this context:tag component
         return {
-          context:
-            contextortag.length > 1
-              ? <tagContext>contextortag[0]
-              : <tagContext>"CONTEXTLESS",
+          context: intendedContext,
           key: contextortag[contextortag.length - 1],
         };
       });
 
+    // Assemble the complete Tagging Rule and add to the output array
     const ruleinst: TagRuleInstance = {
       meTypes: [mtype],
       tags: listedTags,
     };
-
     output.push(ruleinst);
   }
 
@@ -131,4 +172,4 @@ if (import.meta.main) {
   await main();
 }
 
-export { parseTagRules };
+export { parseTagRules, TagRuleParsingError };
