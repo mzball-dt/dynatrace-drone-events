@@ -3,6 +3,12 @@ type: docker
 name: default
 
 steps:
+  - name: test
+    image: hayd/alpine-deno:1.3.1
+    commands:
+      - deno cache main.ts
+      - deno test
+
   - name: docker w/ publish
     image: plugins/docker
     settings:
@@ -15,7 +21,7 @@ steps:
       auto_tag: true
       dockerfile: ./dockerfile
 
-  - name: test plugin
+  - name: Use Plugin to push event to dt environment
     image: cavejay/dynatrace-drone-events
     settings:
       dynatrace_environment:
