@@ -11,8 +11,8 @@ USER deno
 # RUN deno cache deps.ts
 
 # These steps will be re-run upon each file change in your working directory:
-ADD . .
+ADD . /bin
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
-RUN deno cache main.ts
+RUN deno cache /bin/main.ts
 
-CMD ["run", "--allow-net", "--allow-env", "main.ts"]
+CMD ["run", "--allow-net", "--allow-env", "/bin/main.ts"]
