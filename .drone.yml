@@ -29,8 +29,8 @@ steps:
       dynatrace_api_token:
         from_secret: dttoken
       tagrules:
-        - HOST=SableVM
-      customprops:
+        - HOST=HyperVisor&&SableBeast
+      customproperties:
         - msg=This is what I wanted to say
         - msg2=We're just showing the other custom prop values
 

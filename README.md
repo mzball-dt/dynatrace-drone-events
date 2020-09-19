@@ -18,8 +18,9 @@ Integrate this into your Drone pipeline like so:
         from_secret: dtenv
       dynatrace_api_token:
         from_secret: dttoken
-      dynatrace_entity_type: HOST
-      dynatrace_tag_rule: SableVM
+      tagrules:
+        - HOST=tag1
+        - SERVICE=tag2&&tag3
 ```
 
 For a result like:
@@ -27,7 +28,7 @@ For a result like:
 ![Resulting Dynatrace Event](https://github.com/mzball-dt/dynatrace-drone-events/blob/master/dtEventExample.jpg?raw=true)
 
 This Deno script can be run by itself, but much of the interesting information is passed to the script via environment variables established by Drone at runtime.
-main.ts can be inspected for the DRONE environment variables that are used. Please note that the current 0.1 release is barebones and utilises very few.
+main.ts can be inspected for the DRONE environment variables that are used. Please note that the current 0.1.1 release is barebones and utilises very few.
 
 ```powershell
 pwsh ~\dynatrace-drone-events>$env:PLUGIN_DYNATRACE_ENVIRONMENT = 'https://abc1234.live.dynatrace.com'
@@ -41,5 +42,14 @@ pwsh ~\dynatrace-drone-events>deno run --allow-env --allow-net .\main.ts
 
 1. Install Deno from https://deno.land
 2. Clone this repo
-3. Deno test
-4. Deno run --allow-net --allow-env ./main.ts
+
+`git clone https://github.com/mzball-dt/dynatrace-drone-events`
+
+3. Make changes
+4. Run tests
+
+`deno test`
+
+4. Populate the environment variables and then run the script
+
+`deno run --allow-net --allow-env ./main.ts`

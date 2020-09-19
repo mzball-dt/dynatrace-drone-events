@@ -113,6 +113,8 @@ async function main() {
       "This plugin requires a tag and entity type to tie a Drone event to a Dynatrace Entity"
     );
 
+  const dtCustomPropString = Deno.env.get("PLUGIN_CUSTOMPROPERTIES") ?? "";
+
   // Test that we can reach the provided dt env
   if (!validatedtenv(dtenv, dttoken))
     throw new Error(`Unable to reach ${dtenv}`);
@@ -123,27 +125,45 @@ async function main() {
   const commitSha = Deno.env.get("DRONE_COMMIT_SHA") ?? "No Text In Revision";
   const commitMessage =
     Deno.env.get("DRONE_COMMIT_MESSAGE") ?? "No Text In Changelog";
-  const droneProject = Deno.env.get("DRONE_REPO_NAME");
+  const droneRepo = Deno.env.get("DRONE_REPO");
   const droneRepoBranch = Deno.env.get("DRONE_REPO_BRANCH");
-  const droneRepoLink = Deno.env.get("DRONE_REPO_LINK");
+  // const droneRepoLink = Deno.env.get("DRONE_REPO_LINK");
 
   const droneBuildLink = Deno.env.get("DRONE_BUILD_LINK");
   const droneBuildEvent = Deno.env.get("DRONE_BUILD_EVENT");
   const droneBuildNumber = Deno.env.get("DRONE_BUILD_NUMBER");
+  const droneBuildStatus = Deno.env.get("DRONE_BUILD_STATUS");
+
+  const droneCustomProps = {
+    deploymentBuild: `Build #${droneBuildNumber}`,
+    commitAuthor: `${commitAuthor}`,
+    commitMessage: `${commitMessage}`,
+    buildStatus: `${droneBuildStatus}`,
+  };
 
   // Setup API request
   const tagRules = parseTagRules(dtTagRules);
+  const dtcustomProps = parseCustomProps(dtCustomPropString);
+
+  // Combine the extended props we pull from Drone with the custom props provided by the user
+  const customProps = Object.assign(droneCustomProps, dtcustomProps);
 
   let body: EventPostBody = {
     eventType: "CUSTOM_DEPLOYMENT",
     source: "Drone CI",
-    deploymentProject: droneProject,
+    deploymentProject: `${droneRepo}`,
     attachRules: {
       tagRule: tagRules,
     },
-    deploymentName: `${droneBuildEvent} event - Build #${droneBuildNumber}`,
-    deploymentVersion: `${commitSha} - Build ${droneBuildNumber}`,
+    deploymentName: `${droneBuildEvent} to ${droneRepo}:${droneRepoBranch} - Build #${droneBuildNumber}`,
+    deploymentVersion: `${commitSha}`,
+    customProperties: customProps,
   };
+
+  if (droneBuildEvent == "tag")
+    body.deploymentVersion = Deno.env.get("DRONE_TAG");
+  if (droneBuildEvent == "pull_request")
+    body.deploymentVersion = Deno.env.get("DRONE_PULL_REQUEST");
 
   if (droneBuildLink) body.ciBackLink = droneBuildLink;
 
