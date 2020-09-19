@@ -6,6 +6,7 @@ import {
   TagRuleInstance,
   tagDescription,
   tagContext,
+  CustomPropertyObject,
 } from "./dtEvent.d.ts";
 
 import {
@@ -13,7 +14,7 @@ import {
   tagContext as tagContextStrings,
 } from "./validStrings.ts";
 
-class TagRuleParsingError extends Error {
+export class TagRuleParsingError extends Error {
   constructor(message?: string) {
     super(message);
     // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
@@ -30,7 +31,7 @@ function usage(): string {
   return "Usage: \n\tdeno run --allow-env --allow-net ./main.ts [--tagrule <Tag Filter>][--entityID <Monitored Entity>]";
 }
 
-function parseTagRules(input: string): Array<TagRuleInstance> | any {
+export function parseTagRules(input: string): Array<TagRuleInstance> {
   // Tags are provided in comma separated arrays
   const tagRules: Array<string> = input.split(",");
 
@@ -89,8 +90,12 @@ function parseTagRules(input: string): Array<TagRuleInstance> | any {
   return output;
 }
 
+export function parseCustomProps(input: string): CustomPropertyObject {
+  return {};
+}
+
 async function main() {
-  const { entityID, entityType, tagrule, help } = parse(Deno.args);
+  const { tagrule, help } = parse(Deno.args);
   if (help) {
     return console.log(usage());
   }
@@ -171,5 +176,3 @@ async function main() {
 if (import.meta.main) {
   await main();
 }
-
-export { parseTagRules, TagRuleParsingError };

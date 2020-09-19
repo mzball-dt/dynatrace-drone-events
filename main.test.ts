@@ -200,3 +200,8 @@ Deno.test("TagRule Parser - bad input", () => {
   assertThrows(() => parseTagRules(badinput2), TypeError);
   parseTagRules(badinput3);
 });
+
+Deno.test("CustomProp Parser - expected behaviour", () => {});
+Deno.test("CustomProp Parser - expected behaviour - complex", () => {});
+Deno.test("CustomProp Parser - poor input", () => {});
+Deno.test("CustomProp Parser - bad input behaviour", () => {});

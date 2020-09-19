@@ -1,4 +1,4 @@
-type meType =
+export type meType =
   | "APM_SECURITY_GATEWAY"
   | "APPLICATION"
   | "APPLICATION_METHOD"
@@ -92,7 +92,7 @@ type meType =
   | "VIRTUALMACHINE"
   | "VMWARE_DATACENTER";
 
-type eventType =
+export type eventType =
   | "AVAILABILITY_EVENT"
   | "CUSTOM_ANNOTATION"
   | "CUSTOM_CONFIGURATION"
@@ -103,7 +103,7 @@ type eventType =
   | "PERFORMANCE_EVENT"
   | "RESOURCE_CONTENTION";
 
-type tagContext =
+export type tagContext =
   | "AWS"
   | "AWS_GENERIC"
   | "AZURE"
@@ -113,17 +113,17 @@ type tagContext =
   | "GOOGLE_CLOUD"
   | "KUBERNETES";
 
-type tagDescription = {
+export type tagDescription = {
   context: tagContext;
   key: string;
 };
 
-type TagRuleInstance = {
+export type TagRuleInstance = {
   meTypes: Array<meType>;
   tags: Array<tagDescription>;
 };
 
-type EventPostBody = {
+export type EventPostBody = {
   eventType: eventType;
   timeoutMinutes?: number;
   attachRules: {
@@ -138,4 +138,4 @@ type EventPostBody = {
   customProperties?: object;
 };
 
-export { meType, tagContext, EventPostBody, TagRuleInstance, tagDescription };
+export type CustomPropertyObject = object;
