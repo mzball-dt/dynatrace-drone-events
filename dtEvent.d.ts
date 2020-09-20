@@ -138,4 +138,7 @@ export type EventPostBody = {
   customProperties?: object;
 };
 
-export type CustomPropertyObject = object;
+export type CustomPropertyObject = Record<
+  string,
+  string | number | boolean | undefined
+>;

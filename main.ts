@@ -23,6 +23,15 @@ export class TagRuleParsingError extends Error {
   }
 }
 
+export class CustomPropParsingError extends Error {
+  constructor(message?: string) {
+    super(message);
+    // see: typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
+    Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+    this.name = CustomPropParsingError.name; // stack traces display correctly now
+  }
+}
+
 function validatedtenv(env: string, token: string): boolean {
   return true;
 }
@@ -91,7 +100,24 @@ export function parseTagRules(input: string): Array<TagRuleInstance> {
 }
 
 export function parseCustomProps(input: string): CustomPropertyObject {
-  return {};
+  const customPropPairs = input.split(",");
+
+  let output: CustomPropertyObject = {};
+  for (const iterator of customPropPairs) {
+    if (iterator == "") continue;
+    const [k, ...v] = iterator.split("=");
+
+    if (!k)
+      throw new CustomPropParsingError(
+        `Unable to find key on left hand side of '=' in ${iterator}`
+      );
+
+    const v2 = v.join("") == "" ? undefined : v.join("=");
+
+    output[k] = v2 ?? undefined;
+  }
+
+  return output;
 }
 
 async function main() {
