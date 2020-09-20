@@ -104,8 +104,9 @@ export function parseCustomProps(input: string): CustomPropertyObject {
 
   let output: CustomPropertyObject = {};
   for (const iterator of customPropPairs) {
-    if (iterator == "") continue;
-    const [k, ...v] = iterator.split("=");
+    const keypair = iterator.trim();
+    if (keypair == "") continue;
+    const [k, ...v] = keypair.split("=");
 
     if (!k)
       throw new CustomPropParsingError(

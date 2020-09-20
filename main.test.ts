@@ -218,8 +218,18 @@ Deno.test("CustomProp Parser - expected behaviour", () => {
 
   const input3 = "";
   assertEquals(parseCustomProps(input3), {});
+
+  const input4 = "foo=b a r,value two=the other value";
+  const expectedOutput4: CustomPropertyObject = {
+    foo: "b a r",
+    "value two": "the other value",
+  };
+  assertEquals(parseCustomProps(input4), expectedOutput4);
 });
 Deno.test("CustomProp Parser - expected behaviour - complex", () => {
+  const input1 = " ";
+  assertEquals(parseCustomProps(input1), {});
+
   const input2 = "foo=";
   const expectedOutput2: CustomPropertyObject = {
     foo: undefined,
@@ -252,6 +262,7 @@ Deno.test("CustomProp Parser - poor input", () => {
   const input2 = "v=1,,c=2";
   const input2a = ",v=1,c=2";
   const input2b = "v=1,c=2,";
+  const input2c = " ,v=1,c=2";
   const expectedOutput2: CustomPropertyObject = {
     v: "1",
     c: "2",
@@ -259,14 +270,21 @@ Deno.test("CustomProp Parser - poor input", () => {
   assertEquals(parseCustomProps(input2), expectedOutput2);
   assertEquals(parseCustomProps(input2a), expectedOutput2);
   assertEquals(parseCustomProps(input2b), expectedOutput2);
+  assertEquals(parseCustomProps(input2c), expectedOutput2);
 
   const input3 = "=2,v=1";
+  const input3a = " =2,v=1";
+  const input3b = "v=1, =2";
   const input4 = "v=1,=2";
   assertThrows(() => parseCustomProps(input3), CustomPropParsingError);
+  assertThrows(() => parseCustomProps(input3a), CustomPropParsingError);
+  assertThrows(() => parseCustomProps(input3b), CustomPropParsingError);
   assertThrows(() => parseCustomProps(input4), CustomPropParsingError);
 
   const input5 = "==";
+  const input5a = " = ";
   assertThrows(() => parseCustomProps(input5), CustomPropParsingError);
+  assertThrows(() => parseCustomProps(input5a), CustomPropParsingError);
 
   const input6 = ",,";
   assertEquals(parseCustomProps(input6), {});
