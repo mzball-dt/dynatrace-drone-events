@@ -28,13 +28,12 @@ For a result like:
 ![Resulting Dynatrace Event](https://github.com/mzball-dt/dynatrace-drone-events/blob/master/dtEventExample.jpg?raw=true)
 
 This Deno script can be run by itself, but much of the interesting information is passed to the script via environment variables established by Drone at runtime.
-main.ts can be inspected for the DRONE environment variables that are used. Please note that the current 0.1.1 release is barebones and utilises very few.
+main.ts can be inspected for the DRONE environment variables that are used.
 
 ```powershell
 pwsh ~\dynatrace-drone-events>$env:PLUGIN_DYNATRACE_ENVIRONMENT = 'https://abc1234.live.dynatrace.com'
 pwsh ~\dynatrace-drone-events>$env:PLUGIN_DYNATRACE_API_TOKEN = '7h1515470k3npl3453b3l13v3'
-pwsh ~\dynatrace-drone-events>$env:PLUGIN_DYNATRACE_ENTITY_TYPE = 'HOST'
-pwsh ~\dynatrace-drone-events>$env:PLUGIN_DYNATRACE_TAG_RULE = 'Dev-Cluster1'
+pwsh ~\dynatrace-drone-events>$env:PLUGIN_TAGRULES = 'HOST=tag1,SERVICE=tag2&&tag3'
 pwsh ~\dynatrace-drone-events>deno run --allow-env --allow-net .\main.ts
 ```
 
