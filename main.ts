@@ -32,10 +32,6 @@ export class CustomPropParsingError extends Error {
   }
 }
 
-function validatedtenv(env: string, token: string): boolean {
-  return true;
-}
-
 function usage(): string {
   return "Usage: \n\tdeno run --allow-env --allow-net ./main.ts [--tagrule <Tag Filter>][--entityID <Monitored Entity>]";
 }
@@ -55,9 +51,8 @@ export function parseTagRules(input: string): Array<TagRuleInstance> {
     // pull out the meType of the tagging rule and ensure it's valid
     const entityTypeTagNamePairs = iterator.split("=");
     const mtype: meType = entityTypeTagNamePairs[0] as meType;
-    if (!Object.values(meTypeStrings).find((x) => x === mtype)) {
+    if (!Object.values(meTypeStrings).find((x) => x === mtype))
       throw new TypeError(`'${mtype} is not a valid meType'`);
-    }
 
     // pull out the tag and context elements from the rhs of the k/v pair
     const listedTags: Array<tagDescription> = entityTypeTagNamePairs[1]
@@ -70,22 +65,48 @@ export function parseTagRules(input: string): Array<TagRuleInstance> {
           );
 
         // Pull apart the context and tag, checking the context for known good values
-        const contextortag: Array<string> = _.split(":");
-        const intendedContext =
-          contextortag.length > 1
-            ? (contextortag[0] as tagContext)
-            : ("CONTEXTLESS" as tagContext);
-        if (
-          !Object.values(tagContextStrings).find((x) => x === intendedContext)
-        ) {
-          throw new TypeError(`'${intendedContext} is not a valid tagContext'`);
+        let tagContext: tagContext = "CONTEXTLESS";
+        let tagKey;
+        let tagValue;
+
+        let tagMatches = _.match(/^\[(.*?)\](.*)$/);
+        if (tagMatches) {
+          // Check that we have a tag key after the possible context
+          if (tagMatches[2] == "")
+            throw new TagRuleParsingError(
+              `Tag Rule parsing problem - tag key was found to be an empty string in '${iterator}'. Total tagRule string is '${input}'`
+            );
+
+          tagContext = tagMatches[1] as tagContext;
+          if (!Object.values(tagContextStrings).find((x) => x === tagContext))
+            throw new TypeError(`'${tagContext} is not a valid tagContext'`);
+
+          const keyval = tagMatches[2].split(":");
+          tagKey = keyval[0];
+          if (keyval[1]) tagValue = keyval.slice(1).join(":");
+        } else {
+          const keyval = _.split(":");
+          tagKey = keyval[0];
+          if (keyval[1]) tagValue = keyval.slice(1).join(":");
         }
 
+        if (!tagKey)
+          throw new TagRuleParsingError(
+            `Tag Rule parsing problem - tag key was found to be an empty string in '${iterator}'. Total tagRule string is '${input}'`
+          );
+
         // Return the object that represents this context:tag component
-        return {
-          context: intendedContext,
-          key: contextortag[contextortag.length - 1],
-        };
+        if (tagValue)
+          return {
+            context: tagContext,
+            key: tagKey,
+            value: tagValue,
+          } as tagDescription;
+        else
+          return {
+            context: tagContext,
+            key: tagKey,
+          } as tagDescription;
       });
 
     // Assemble the complete Tagging Rule and add to the output array
@@ -142,9 +163,9 @@ async function main() {
 
   const dtCustomPropString = Deno.env.get("PLUGIN_CUSTOMPROPERTIES") ?? "";
 
-  // Test that we can reach the provided dt env
-  if (!validatedtenv(dtenv, dttoken))
-    throw new Error(`Unable to reach ${dtenv}`);
+  // // Test that we can reach the provided dt env
+  // if (!validatedtenv(dtenv, dttoken))
+  //   throw new Error(`Unable to reach ${dtenv}`);
 
   // Consume Drone config
 

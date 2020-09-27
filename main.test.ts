@@ -13,7 +13,7 @@ import {
 } from "./main.ts";
 
 Deno.test("TagRule Parser - expected behaviour - one rule", () => {
-  const input1 = "HOST=CONTEXTLESS:tag1";
+  const input1 = "HOST=[CONTEXTLESS]tag1";
   const expectedOutput: Array<TagRuleInstance> = [
     {
       meTypes: ["HOST"],
@@ -32,7 +32,7 @@ Deno.test("TagRule Parser - expected behaviour - one rule", () => {
   const input2 = "HOST=tag1";
   assertEquals(parseTagRules(input2), expectedOutput);
 
-  const input3 = "PROCESS_GROUP_INSTANCE=ENVIRONMENT:tag2";
+  const input3 = "PROCESS_GROUP_INSTANCE=[ENVIRONMENT]tag2";
   const expectedOutput3: Array<TagRuleInstance> = [
     {
       meTypes: ["PROCESS_GROUP_INSTANCE"],
@@ -47,8 +47,8 @@ Deno.test("TagRule Parser - expected behaviour - one rule", () => {
   assertEquals(parseTagRules(input3), expectedOutput3);
 });
 Deno.test("TagRule Parser - expected behaviour - multiple rules", () => {
-  const input1 = "HOST=CONTEXTLESS:tag1,PROCESS_GROUP=tag1";
-  const input2 = "HOST=CONTEXTLESS:tag1,PROCESS_GROUP=CONTEXTLESS:tag1";
+  const input1 = "HOST=[CONTEXTLESS]tag1,PROCESS_GROUP=tag1";
+  const input2 = "HOST=[CONTEXTLESS]tag1,PROCESS_GROUP=[CONTEXTLESS]tag1";
   const input3 = "HOST=tag1,PROCESS_GROUP=tag1";
 
   const expectedOutput: Array<TagRuleInstance> = [
@@ -102,7 +102,7 @@ Deno.test("TagRule Parser - expected behaviour - multiple rules", () => {
 Deno.test(
   "TagRule Parser - expected behaviour - multiple tags in one rule",
   () => {
-    const input1 = "HOST=CONTEXTLESS:tag1&&tag2&&tag3";
+    const input1 = "HOST=[CONTEXTLESS]tag1&&tag2&&tag3";
     const expectedOutput: Array<TagRuleInstance> = [
       {
         meTypes: ["HOST"],
@@ -126,7 +126,7 @@ Deno.test(
     assertEquals(parseTagRules(input1), expectedOutput);
 
     const input2 =
-      "HOST=AZURE:tag1&&tag2&&tag3,SERVICE_METHOD=ENVIRONMENT:nexttag&&tag with space&&KUBERNETES:othertag,SERVICE=tag1";
+      "HOST=[AZURE]tag1&&[AZURE]tag2&&[AZURE]tag3,SERVICE_METHOD=[ENVIRONMENT]nexttag&&tag with space&&[KUBERNETES]othertag,SERVICE=tag1";
     const expectedOutput2: Array<TagRuleInstance> = [
       {
         meTypes: ["HOST"],
@@ -136,11 +136,11 @@ Deno.test(
             key: "tag1",
           },
           {
-            context: "CONTEXTLESS",
+            context: "AZURE",
             key: "tag2",
           },
           {
-            context: "CONTEXTLESS",
+            context: "AZURE",
             key: "tag3",
           },
         ],
@@ -177,29 +177,147 @@ Deno.test(
   }
 );
 Deno.test("TagRule Parser - poor input", () => {
-  const badinput1 = "HOST=CONTEXTLESS:tag1&&,PROCESS_GROUP=tag1";
-  const badinput2 = "HOST=CONTEXTLESS:tag1,";
-  const badinput3 = "HOST=CONTEXTLESS:tag1,test";
-  const badinput4 = "HOST=CONTEXTLESS:tag1,PROCESS_GROUP_INSTANCE=";
-  const badinput5 = "=CONTEXTLESS:tag1";
+  const badinput1 = "HOST=[CONTEXTLESS]tag1&&,PROCESS_GROUP=tag1";
+  const badinput2 = "HOST=[CONTEXTLESS]tag1,";
+  const badinput3 = "HOST=[CONTEXTLESS]tag1,test";
+  const badinput4 = "HOST=[CONTEXTLESS]tag1,PROCESS_GROUP_INSTANCE=";
+  const badinput5 = "=[CONTEXTLESS]tag1";
+  const badinput6 = "HOST=[]";
+  const badinput7 = "[]";
 
   assertThrows(() => parseTagRules(badinput1), TagRuleParsingError);
   assertThrows(() => parseTagRules(badinput2), TagRuleParsingError);
   assertThrows(() => parseTagRules(badinput3), TagRuleParsingError);
   assertThrows(() => parseTagRules(badinput4), TagRuleParsingError);
   assertThrows(() => parseTagRules(badinput5), TagRuleParsingError);
+  assertThrows(() => parseTagRules(badinput6), TagRuleParsingError);
+  assertThrows(() => parseTagRules(badinput7), TagRuleParsingError);
 });
 Deno.test("TagRule Parser - bad input", () => {
-  const badinput1 = "TEST=haha:ahahaha";
-  const badinput2 = "HOST=haha:ahahaha";
-  const badinput3 = "HOST=AZURE:ahahaha";
+  const badinput1 = "TEST=[haha]ahahaha";
+  const badinput2 = "HOST=[haha]ahahaha";
+  const badinput3 = "HOST=[]ahahaha";
+
   // const badinput3 = "HOST=CONTEXTLESS:tag1,test";
   // const badinput4 = "HOST=CONTEXTLESS:tag1,PROCESS_GROUP_INSTANCE";
 
   // const generatedOutput = parseTagRules(badinput1);
   assertThrows(() => parseTagRules(badinput1), TypeError);
   assertThrows(() => parseTagRules(badinput2), TypeError);
-  parseTagRules(badinput3);
+  assertThrows(() => parseTagRules(badinput3), TypeError);
+});
+
+Deno.test("TagRule Parser - Key:Value tests", () => {
+  const input1 = "HOST=tag1:123";
+  const expectedOutput1: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "CONTEXTLESS",
+          key: "tag1",
+          value: "123",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input1), expectedOutput1);
+
+  const input2 = "HOST=tag1:123&&t2";
+  const input2a = "HOST=tag1:123&&t2:";
+  const expectedOutput2: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "CONTEXTLESS",
+          key: "tag1",
+          value: "123",
+        },
+        {
+          context: "CONTEXTLESS",
+          key: "t2",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input2), expectedOutput2);
+  assertEquals(parseTagRules(input2a), expectedOutput2);
+
+  const input3 = "HOST=tag1:This a tag value";
+  const expectedOutput3: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "CONTEXTLESS",
+          key: "tag1",
+          value: "This a tag value",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input3), expectedOutput3);
+
+  const input4 = "HOST=tag1:This a tag value&&tag3:&&tag2:Another Value";
+  const expectedOutput4: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "CONTEXTLESS",
+          key: "tag1",
+          value: "This a tag value",
+        },
+        {
+          context: "CONTEXTLESS",
+          key: "tag3",
+        },
+        {
+          context: "CONTEXTLESS",
+          key: "tag2",
+          value: "Another Value",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input4), expectedOutput4);
+});
+Deno.test("TagRule Parser - [Context]key:value", () => {
+  const input1 = "HOST=[AWS]tag1:testval";
+  const expectedOutput1: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "AWS",
+          key: "tag1",
+          value: "testval",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input1), expectedOutput1);
+
+  const input2 = "HOST=[AWS]tag1:testval:stillfirstval";
+  const expectedOutput2: Array<TagRuleInstance> = [
+    {
+      meTypes: ["HOST"],
+      tags: [
+        {
+          context: "AWS",
+          key: "tag1",
+          value: "testval:stillfirstval",
+        },
+      ],
+    },
+  ];
+  assertEquals(parseTagRules(input2), expectedOutput2);
+
+  const input3 = "HOST=[AWS]tag1&&:testval:stillfirstval";
+  assertThrows(() => parseTagRules(input3), TagRuleParsingError);
+  const input4 = "HOST=[AWS]tag1&&[AWS]tag2:&&[]";
+  assertThrows(() => parseTagRules(input4), TagRuleParsingError);
 });
 
 Deno.test("CustomProp Parser - expected behaviour", () => {

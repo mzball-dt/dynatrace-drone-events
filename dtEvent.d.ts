@@ -116,6 +116,7 @@ export type tagContext =
 export type tagDescription = {
   context: tagContext;
   key: string;
+  value?: string;
 };
 
 export type TagRuleInstance = {
